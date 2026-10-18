@@ -68,7 +68,7 @@ resource "azurerm_container_group" "app" {
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
   ip_address_type     = "Public"
-  dns_name_label      = "cr460-CHANGE-MOI"
+  dns_name_label      = "cr460-pelvis2026"
 
   container {
     name   = "web"
