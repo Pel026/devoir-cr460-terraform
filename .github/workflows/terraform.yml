@@ -13,6 +13,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -20,8 +21,25 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan -input=false
+      # Temps 1 : créer d'abord le registre
+      - name: Apply - créer ACR
+        run: terraform apply -auto-approve -input=false -target=azurerm_container_registry.acr
 
-      - name: Terraform Apply
+      # Met à jour les sorties après la création ciblée
+      - name: Rafraichir les sorties
+        run: terraform apply -refresh-only -auto-approve -input=false
+
+      # Temps 2 : construire et pousser l'image
+      - name: Build et push de l'image Docker
+        run: |
+          ACR_SERVER=$(terraform output -raw acr_login_server)
+          ACR_USER=$(terraform output -raw acr_admin_username)
+          ACR_PASS=$(terraform output -raw acr_admin_password)
+          echo "::add-mask::$ACR_PASS"
+          echo "$ACR_PASS" | docker login "$ACR_SERVER" -u "$ACR_USER" --password-stdin
+          docker build -t "$ACR_SERVER/devoir-web:v1" ./app
+          docker push "$ACR_SERVER/devoir-web:v1"
+
+      # Temps 3 : déployer tout le reste, dont le container
+      - name: Apply - déploiement complet
         run: terraform apply -auto-approve -input=false

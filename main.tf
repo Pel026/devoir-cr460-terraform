@@ -106,17 +106,22 @@ resource "azurerm_network_interface" "nic" {
 
 # ---------- Point 10 : container Docker ----------
 resource "azurerm_container_group" "app" {
-  name                = "aci-${var.prefix}"
+  name                = "aci-cr460"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
   ip_address_type     = "Public"
-  dns_name_label      = "${var.prefix}-${random_string.suffix.result}"
-  tags                = local.common_tags
+  dns_name_label      = "cr460-${random_string.suffix.result}"
+
+  image_registry_credential {
+    server   = azurerm_container_registry.acr.login_server
+    username = azurerm_container_registry.acr.admin_username
+    password = azurerm_container_registry.acr.admin_password
+  }
 
   container {
     name   = "web"
-    image  = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+    image  = "${azurerm_container_registry.acr.login_server}/devoir-web:v1"
     cpu    = "0.5"
     memory = "1.0"
 
@@ -125,4 +130,12 @@ resource "azurerm_container_group" "app" {
       protocol = "TCP"
     }
   }
+}
+# ---------- Point 14 : Azure Container Registry ----------
+resource "azurerm_container_registry" "acr" {
+  name                = "acrcr460${random_string.suffix.result}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = true
 }
