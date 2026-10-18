@@ -1,25 +1,10 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
+# ---------- Point 7 : groupe de ressources ----------
 resource "azurerm_resource_group" "rg" {
   name     = "rg-cr460"
-  location = "Canada Central"   # Correction : espace obligatoire
+  location = "canadacentral"
 }
 
+# ---------- Point 8 : réseau virtuel et sous-réseau ----------
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet-cr460"
   address_space       = ["10.0.0.0/16"]
@@ -34,6 +19,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+# ---------- Point 9 : machine virtuelle ----------
 resource "random_password" "vm_password" {
   length           = 20
   special          = true
@@ -54,10 +40,10 @@ resource "azurerm_network_interface" "nic" {
 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                            = "vm-cr460"
-  resource_group_name             = azurerm_resource_group.rg.name
   location                        = azurerm_resource_group.rg.location
-  size                            = "Standard_B1s"
-  admin_username                  = "azureuser"
+  resource_group_name             = azurerm_resource_group.rg.name
+  size                            = "Standard_B4ps_v2"
+  admin_username                  = "azureadmin"
   admin_password                  = random_password.vm_password.result
   disable_password_authentication = false
   network_interface_ids           = [azurerm_network_interface.nic.id]
@@ -69,12 +55,8 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server-arm64"
     version   = "latest"
   }
-}
-
-output "vm_private_ip" {
-  value = azurerm_network_interface.nic.private_ip_address
 }
