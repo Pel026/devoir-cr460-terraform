@@ -35,9 +35,9 @@ resource "azurerm_network_interface" "nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-  }
+  } 
 }
-
+/*
 resource "azurerm_linux_virtual_machine" "vm" {
   name                            = "vm-cr460"
   location                        = azurerm_resource_group.rg.location
@@ -58,5 +58,28 @@ resource "azurerm_linux_virtual_machine" "vm" {
     offer     = "ubuntu-24_04-lts"
     sku       = "server-arm64"
     version   = "latest"
+  }
+}/*
+
+
+# ---------- Point 10 : container Docker ----------
+resource "azurerm_container_group" "app" {
+  name                = "aci-cr460"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  os_type             = "Linux"
+  ip_address_type     = "Public"
+  dns_name_label      = "cr460-pelvis2026"
+
+  container {
+    name   = "web"
+    image  = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+    cpu    = "0.5"
+    memory = "1.0"
+
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
   }
 }
