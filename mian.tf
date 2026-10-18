@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "rg" {
   name     = "rg-cr460"
-  location = "canadaeast"
+  location = "CanadaCentral"
 }
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet-cr460"
@@ -37,7 +37,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   name                            = "vm-cr460"
   location                        = azurerm_resource_group.rg.location
   resource_group_name             = azurerm_resource_group.rg.name
-  size                            = "Standard_B1s"
+  size                            = "Standard_B4ps_v2"
   admin_username                  = "azureadmin"
   admin_password                  = random_password.vm_password.result
   disable_password_authentication = false
