@@ -51,7 +51,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   source_image_reference {
     publisher = "Canonical"
     offer     = "ubuntu-24_04-lts"
-    sku       = "server"
+    sku       = "server-arm64"
     version   = "latest"
   }
 }
