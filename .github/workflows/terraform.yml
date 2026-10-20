@@ -1,12 +1,37 @@
-name: Terraform Pipeline
+name: Terraform Azure Pipeline
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  terraform:
+  # ---------- Étape 1 : vérification et plan ----------
+  plan:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
+  # ---------- Étape 2 : approbation manuelle, puis apply ----------
+  apply:
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -18,18 +43,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
-      # Temps 1 : créer d'abord le registre
       - name: Apply - créer ACR
         run: terraform apply -auto-approve -input=false -target=azurerm_container_registry.acr
 
-      # Met à jour les sorties après la création ciblée
       - name: Rafraichir les sorties
         run: terraform apply -refresh-only -auto-approve -input=false
 
-      # Temps 2 : construire et pousser l'image
       - name: Build et push de l'image Docker
         run: |
           ACR_SERVER=$(terraform output -raw acr_login_server)
@@ -40,6 +59,5 @@ jobs:
           docker build -t "$ACR_SERVER/devoir-web:v1" ./app
           docker push "$ACR_SERVER/devoir-web:v1"
 
-      # Temps 3 : déployer tout le reste, dont le container
       - name: Apply - déploiement complet
         run: terraform apply -auto-approve -input=false
