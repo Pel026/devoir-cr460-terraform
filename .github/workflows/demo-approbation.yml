@@ -1,0 +1,28 @@
+name: Demo approbation manuelle
+
+on:
+  workflow_dispatch:
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Apply exécuté après approbation manuelle
+        run: echo "Le job apply s'exécute seulement après la validation d'un réviseur"
